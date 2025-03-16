@@ -1,2 +1,0 @@
-# LogSpawner
-A keylogger spawner 
