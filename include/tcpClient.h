@@ -6,9 +6,11 @@
 
 class tcpClient {
 public:
+
     tcpClient(std::string serverIpAddr, USHORT serverPort);
+    bool connectToServer();
     bool transmitData(std::string data);
-    bool recvData(char *strBuffer);
+    int recvData(char *strBuffer);
     bool closeConnection();
 
 private:
@@ -17,7 +19,7 @@ private:
     SOCKET clientSoc;
 
     bool initConnection();
-    bool connectToServer();
+    
 };
 
 #endif // TCPCLIENT_H

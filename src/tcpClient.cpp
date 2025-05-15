@@ -4,8 +4,7 @@
 tcpClient::tcpClient(std::string serverIpAddr, USHORT serverPort) {
     this->serverIpAddr = serverIpAddr;
     this->serverPort = serverPort;
-    this->initConnection();
-    this->connectToServer();
+    
 }
 
 bool tcpClient::transmitData(std::string data) {
@@ -22,9 +21,10 @@ bool tcpClient::transmitData(std::string data) {
     return true;
 }
 
-bool tcpClient::recvData(char *strBuffer) {
+int tcpClient::recvData(char *strBuffer) {
+    int bytesReceived = recv(this->clientSoc, strBuffer, 1024, 0);
     
-    return true;
+    return bytesReceived;
 }
 
 bool tcpClient::closeConnection() {
@@ -55,6 +55,7 @@ bool tcpClient::initConnection() {
 }
 
 bool tcpClient::connectToServer() {
+    this->initConnection();
     sockaddr_in clientService;
     clientService.sin_family = AF_INET;
     clientService.sin_addr.s_addr = inet_addr(this->serverIpAddr.c_str());

