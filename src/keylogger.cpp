@@ -28,7 +28,7 @@ BYTE keyState[256] = { 0 };
 
 
 
-int cpsLock = -1;
+int cpsLock = -1;       // manual state tracking needed
 
 
 bool dataReady = false;
