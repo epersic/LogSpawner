@@ -28,11 +28,16 @@ namespace networkControl{
             
             std::string strBuff( (*buffer).begin(),(*buffer).end());    //convert wstring to string for transmission
             if(newClient->transmitData(strBuff) == false){              //if error occurs during transmission, close connection and exit
+                std::cout << "Error sending data" << std::endl;
                 return;
             }
             buffer->clear();                                          //clear the buffer after sending data
         }
+    
     }
+
+    
+
     bool networkControlThread(std::mutex* m, std::condition_variable* cv,bool* ready, std::wstring* buffer,std::atomic<bool>* quitSig){
         
         tcpClient newClient("127.0.0.1",(USHORT)1234);      //Socket object and assign it to a private class variable
@@ -46,21 +51,13 @@ namespace networkControl{
             }else{
                 
                 std::thread sendThread(
-                    networkControl::sendNetworkThread,&newClient, m, cv, ready, buffer, quitSig
+                    networkControl::sendNetworkThread,&newClient, m, cv, ready, buffer, quitSig     //detach the sending thread, flexibility for adding recv and other functionality later
                 );
 
                 sendThread.join();
             }
-                
-            /*while(*quitSig == false){
-                std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-            }
+            std::cout << "Connection ended" << std::endl;
             
-            {
-                std::lock_guard<std::mutex> lock(*m);
-                *ready = true;
-            }
-            cv->notify_one();*/
         }
             
     }

