@@ -18,7 +18,7 @@
 #include<string>
 #include<atomic>
 #include "networkControl.h"
-#define DEF_ACC_BUFFER_SIZE 1
+#define DEF_ACC_BUFFER_SIZE 1       // modular with python script
 
 
 using namespace std;
